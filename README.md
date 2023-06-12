@@ -1,0 +1,7 @@
+Create the layout of a dashboard with Plotly express and Dash. Use the cv data located in this link https://raw.githubusercontent.com/tatyskya/dataset_for_ChatGPT/main/2018.csv Create a table with top 10 Country or region with the biggest Score column and show all the columns which are used in csv file Plotly Express does not have a built-in table function. To display a table in Dash, you can use the dash_table library instead my new version of dash ask me to change import import dash_core_components as dcc to from dash import dcc import dash_html_components as html from dash import html import dash_table to from dash import dash_table
+and add to the layout the bar chart with country or region on the y axis and their Score value on the x-axis.
+code must display information from the top 10 countries in both the table and the bar chart.
+and  add a dash component that filters the data according to the multiple value selected in the "Country or region" column.
+and make choropleth map with plotly express to the layout that displays the Country or region and their relevant happiness(Score column) as continuous colors on the map.
+code must display information from the top 10 countries in both the table and the bar chart except choropleth map, it will use the df dataframe for the initial display, and if there are selected countries, it will update the map using the filtered_df dataframe.
+the components must be arranged in such order: dropdown, choropleth map, bar chart, and table.
