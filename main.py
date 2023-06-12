@@ -1,66 +1,87 @@
 import pandas as pd
 import plotly.express as px
 import dash
-from dash import html
-from dash import dcc
+import dash_core_components as dcc
+import dash_html_components as html
 from dash.dependencies import Input, Output
 import dash_table
 
 # Load data
-df = pd.read_csv('https://raw.githubusercontent.com/tatyskya/dataset_for_ChatGPT/main/2018.csv')
+url = "https://raw.githubusercontent.com/tatyskya/dataset_for_ChatGPT/main/2018.csv"
+df = pd.read_csv(url)
+
+# Get top 10 countries
+top_10 = df.sort_values(by='Score', ascending=False).head(10)
 
 # Create app
 app = dash.Dash(__name__)
 
 # Define layout
 app.layout = html.Div([
-    # Dropdown to filter data by country or region
+    # Dropdown filter for country
     dcc.Dropdown(
-        id='country-dropdown',
-        options=[{'label': i, 'value': i} for i in df['Country or region'].unique()],
-        value=[],
+        id='country-filter',
+        options=[{'label': c, 'value': c} for c in df['Country or region'].unique()],
         multi=True,
-        placeholder='Select a country or region'
+        value=top_10['Country or region'].tolist()
     ),
     # Choropleth map
     dcc.Graph(id='choropleth-map'),
     # Bar chart
     dcc.Graph(id='bar-chart'),
-    # Table with top 10 countries
+    # Table
     dash_table.DataTable(
         id='table',
-        columns=[{'name': i, 'id': i} for i in df.columns],
-        data=df.sort_values('Score', ascending=False).head(10).to_dict('records')
+        columns=[{'name': c, 'id': c} for c in df.columns],
+        data=top_10.to_dict('records')
     )
 ])
 
 
 # Define callbacks
 @app.callback(
-    [Output('choropleth-map', 'figure'),
-     Output('bar-chart', 'figure'),
-     Output('table', 'data')],
-    [Input('country-dropdown', 'value')]
+    Output('choropleth-map', 'figure'),
+    Input('country-filter', 'value')
 )
-def update_figures(selected_countries):
-    # Filter data by selected countries
+def update_choropleth_map(selected_countries):
     if selected_countries:
         filtered_df = df[df['Country or region'].isin(selected_countries)]
     else:
-        filtered_df = df
+        filtered_df = top_10
 
-    # Choropleth map
-    fig1 = px.choropleth(filtered_df, locations='Country or region', locationmode='country names', color='Score',
-                         title='Happiness Score by Country or Region')
+    fig = px.choropleth(filtered_df, locations='Country or region', locationmode='country names', color='Score',
+                        hover_name='Country or region', range_color=[0, 10], color_continuous_scale='Blues')
+    fig.update_layout(title_text='Happiness Score by Country')
+    return fig
 
-    # Bar chart
-    fig2 = px.bar(filtered_df.sort_values('Score', ascending=False).head(10), x='Score', y='Country or region',
-                  orientation='h', title='Top 10 Countries or Regions by Happiness Score')
 
-    # Table with top 10 countries
-    table_data = filtered_df.sort_values('Score', ascending=False).head(10).to_dict('records')
+@app.callback(
+    Output('bar-chart', 'figure'),
+    Input('country-filter', 'value')
+)
+def update_bar_chart(selected_countries):
+    if selected_countries:
+        filtered_df = df[df['Country or region'].isin(selected_countries)]
+    else:
+        filtered_df = top_10
 
-    return fig1, fig2, table_data
+    fig = px.bar(filtered_df, x='Score', y='Country or region', orientation='h')
+    fig.update_layout(title_text='Top 10 Countries by Happiness Score')
+    return fig
+
+
+@app.callback(
+    Output('table', 'data'),
+    Input('country-filter', 'value')
+)
+def update_table(selected_countries):
+    if selected_countries:
+        filtered_df = df[df['Country or region'].isin(selected_countries)]
+        filtered_df = filtered_df.sort_values(by='Score', ascending=False).head(10)
+    else:
+        filtered_df = top_10
+
+    return filtered_df.to_dict('records')
 
 
 # Run app
